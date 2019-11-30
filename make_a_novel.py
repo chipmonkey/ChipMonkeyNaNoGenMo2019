@@ -1,3 +1,4 @@
+import gpt_2_simple as gpt2
 import shlex
 import subprocess
 import play_text as pt
@@ -34,5 +35,37 @@ def create_textworld_ulx():
     return(play_filename)
 
 
-play_filename = create_textworld_ulx()
-pt.play_text(play_filename)
+def postprocess_file():
+    outfile = open('processedstory.txt', 'w')
+    with open('storyguide.txt', 'r') as infile:
+        raw_text = infile.readline()
+        while raw_text:
+            print(raw_text)
+            if raw_text and raw_text[0] not in ['>', '-', '+']:
+                outfile.write(raw_text)
+            raw_text = infile.readline()
+    outfile.close()
+
+
+def makethenovel():
+    sess = gpt2.start_tf_sess()
+    gpt2.load_gpt2(sess)  # Loads the fine-tuned model
+    with open('processedstory.txt', 'r') as infile, \
+            open('masterpiece.txt', 'w') as novel:
+        raw_text = infile.readline()
+        while raw_text:
+            while not raw_text:  # Skip blank lines
+                print("no blank lines, silly")
+                raw_text = infile.readline()
+            print(f"Processing: {raw_text}")
+            novel_line = gpt2.generate(sess, prefix=raw_text,
+                                       return_as_list=True)[0]
+            print(novel_line, file=novel)
+            raw_text = infile.readline()
+
+
+if __name__ == '__main__':
+    play_filename = create_textworld_ulx()
+    pt.play_text(play_filename)
+    postprocess_file()
+    makethenovel()
